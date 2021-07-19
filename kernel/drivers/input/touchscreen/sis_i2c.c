@@ -15,7 +15,9 @@
 
 #include <linux/module.h>
 #include <linux/delay.h>
+#ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
+#endif
 #include <linux/hrtimer.h>
 #include <linux/i2c.h>
 #include <linux/input.h>
@@ -71,7 +73,9 @@ struct sis_ts_data {
 	int snap_up[2];
 	uint32_t flags;
 	int (*power)(int on);
+#ifdef CONFIG_HAS_EARLYSUSPEND
 	struct early_suspend early_suspend;
+#endif
 };
 
 int sis_ReadPacket(struct i2c_client *client, uint8_t cmd, uint8_t* buf);
@@ -567,7 +571,9 @@ static int sis_ts_remove(struct i2c_client *client)
 {
 	struct sis_ts_data *ts = i2c_get_clientdata(client);
 	//printk( KERN_INFO "sis_ts_remove\n" );
+#ifdef CONFIG_HAS_EARLYSUSPEND
 	unregister_early_suspend(&ts->early_suspend);
+#endif
 	if (ts->use_irq)
 		free_irq(client->irq, ts);
 	else
