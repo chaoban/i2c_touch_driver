@@ -757,12 +757,7 @@ asmlinkage long sys_sis_I2C_IO( unsigned char* data, int size )
         msg[0].addr = ts_bak->client->addr;
         msg[0].flags = 0;
         msg[0].len = size;
-        msg[0].buf = (unsigned char *)(&cmd);
-
-//        msg[1].addr = ts_bak->client->addr;
-//        msg[1].flags = 0;
-//        msg[1].len = size-1;
-//        msg[1].buf = (unsigned char *)(data+1);
+        msg[0].buf = (unsigned char *)data;
 
         ret = i2c_transfer(ts_bak->client->adapter, msg, 1);
         if (ret < 0) {
@@ -789,7 +784,7 @@ asmlinkage long sys_sis_I2C_IO( unsigned char* data, int size )
     }
     else
     {
-        printk(KERN_INFO "read\n" );
+        //printk(KERN_INFO "read\n" );
 #ifdef _SMBUS_INTERFACE
         ret = i2c_smbus_read_block_data( ts_bak->client, cmd, data );
 #else
@@ -809,6 +804,14 @@ asmlinkage long sys_sis_I2C_IO( unsigned char* data, int size )
         }
 #endif
     }
+
+#ifndef _SMBUS_INTERFACE
+    ret = data[0];
+
+    for ( i = 0; i < 15; i++ ) {
+	data[i] = data[i+1];
+    }
+#endif
 
     printk( KERN_INFO "%d\n", ret );
 
