@@ -88,6 +88,11 @@ extern struct regulator_init_data vsim_data;
 #define GOOGLE_PRODUCT_ID		0x9018
 #define GOOGLE_ADB_PRODUCT_ID		0x9015
 
+//W-Y-L
+#define GPIO_IRQ 133
+#define GPIO_DIR 137
+//W-Y-L
+
 static char *usb_functions_adb[] = {
 	"adb",
 };
@@ -597,7 +602,8 @@ static struct i2c_board_info __initdata beagle_zippy_i2c2_boardinfo[] = {};
 #endif
 
 static struct i2c_board_info __initdata beagle_i2c2_boardinfo[] = {};
-static struct i2c_board_info __initdata sis9200_i2c2_boardinfo[] = 
+
+static struct i2c_board_info __initdata sis9200_i2c2_boardinfo[] =
 {
 	{
 		I2C_BOARD_INFO("sis_i2c_ts", 0x05),
@@ -764,6 +770,8 @@ static struct ehci_hcd_omap_platform_data ehci_pdata __initdata = {
 
 #ifdef CONFIG_OMAP_MUX
 static struct omap_board_mux board_mux[] __initdata = {
+	OMAP3_MUX(SDMMC2_DAT1, OMAP_MUX_MODE4 | OMAP_PIN_INPUT),	//W-Y-L GPIO 133
+	OMAP3_MUX(SDMMC2_DAT5, OMAP_MUX_MODE4 | OMAP_PIN_INPUT_PULLDOWN),	//W-Y-L GPIO 137
 	{ .reg_offset = OMAP_MUX_TERMINATOR },
 };
 #else
@@ -791,6 +799,10 @@ static void __init omap3_beagle_init(void)
 	gpio_request(170, "DVI_nPD");
 	/* REVISIT leave DVI powered down until it's needed ... */
 	gpio_direction_output(170, true);
+
+	//omap_mux_init_gpio(GPIO_IRQ, OMAP_PIN_INPUT);		//W-Y-L GPIO 133
+
+	//omap_mux_init_gpio(GPIO_DIR, OMAP_PIN_INPUT_PULLDOWN);  //W-Y-L GPIO 137
 
 	if(!strcmp(expansionboard_name, "zippy"))
 	{
