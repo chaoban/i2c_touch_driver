@@ -334,6 +334,11 @@ int i2c_read_86_data( struct i2c_client *client, unsigned int addr, u8* data )
     int i;
     unsigned char tmp;
 
+#ifndef _SMBUS_INTERFACE
+    u8 cmd = 0x0;
+    struct i2c_msg msg[2];
+#endif
+
     g_crc = 0;
 
     for ( i = 0; i < 4; i++ )
@@ -348,9 +353,42 @@ int i2c_read_86_data( struct i2c_client *client, unsigned int addr, u8* data )
         data[4+i] = ( g_crc >> (8*(1-i)) ) & 0xff;
     }
 
+#ifdef _SMBUS_INTERFACE
     ret = i2c_smbus_write_block_data( client, 0x86, 6, data );
     ret = i2c_smbus_read_block_data( client, 0x02, data );
+#else
+        cmd = 0x86;
+        msg[0].addr = ts_bak->client->addr;
+        msg[0].flags = 0;
+        msg[0].len = 1;
+        msg[0].buf = (unsigned char *)(&cmd);
 
+        msg[1].addr = ts_bak->client->addr;
+        msg[1].flags = 0;
+        msg[1].len = 6;
+        msg[1].buf = (unsigned char *)(data);
+
+        ret = i2c_transfer(ts_bak->client->adapter, msg, 2);
+        if (ret < 0) {
+            printk(KERN_INFO "i2c_transfer write error %d\n", ret);
+        }
+
+        cmd = 0x02;
+        msg[0].addr = ts_bak->client->addr;
+        msg[0].flags = 0;//Write data
+        msg[0].len = 1;
+        msg[0].buf = (unsigned char *)(&cmd);
+
+        msg[1].addr = ts_bak->client->addr;
+        msg[1].flags = I2C_M_RD;
+        msg[1].len = 16;
+        msg[1].buf = (unsigned char *)data;
+
+        ret = i2c_transfer(ts_bak->client->adapter, msg, 2);
+        if (ret < 0) {
+            printk(KERN_INFO "i2c_transfer read error %d\n", ret);
+        }
+#endif
     return ret;
 }
 
@@ -693,7 +731,9 @@ asmlinkage long sys_sis_I2C_IO( unsigned char* data, int size )
     unsigned char cmd = data[0];
     int ret = 0;
     int i;
-
+#ifndef _SMBUS_INTERFACE
+	struct i2c_msg msg[2];
+#endif
     printk(KERN_INFO "sys_sis_I2C_IO, cmd=%02x\n", data[0] );
 
     if ( ts_bak == 0 ) return -13;
@@ -702,13 +742,66 @@ asmlinkage long sys_sis_I2C_IO( unsigned char* data, int size )
     if ( cmd == 0x83 || cmd == 0x84 || cmd == 0x85 || cmd == 0x86 )
     {
         printk(KERN_INFO "write\n" );
+#ifdef _SMBUS_INTERFACE
         ret = i2c_smbus_write_block_data( ts_bak->client, cmd, size-1, data+1 );
         ret = i2c_smbus_read_block_data( ts_bak->client, 0x02, data );
+#else
+//Write
+//ret = i2c_smbus_write_block_data( ts_bak->client, cmd, size-1, data+1 );
+        msg[0].addr = ts_bak->client->addr;
+        msg[0].flags = 0;
+        msg[0].len = 1;
+        msg[0].buf = (unsigned char *)(&cmd);
+
+        msg[1].addr = ts_bak->client->addr;
+        msg[1].flags = 0;
+        msg[1].len = size-1;
+        msg[1].buf = (unsigned char *)(data+1);
+
+        ret = i2c_transfer(ts_bak->client->adapter, msg, 2);
+        if (ret < 0) {
+            printk(KERN_INFO "i2c_transfer write error %d\n", ret);
+        }
+//Read
+//ret = i2c_smbus_read_block_data( ts_bak->client, 0x02, data );
+        cmd = 0x02;
+        msg[0].addr = ts_bak->client->addr;
+        msg[0].flags = 0;//Write data
+        msg[0].len = 1;
+        msg[0].buf = (unsigned char *)(&cmd);
+
+        msg[1].addr = ts_bak->client->addr;
+        msg[1].flags = I2C_M_RD;
+        msg[1].len = 16;
+        msg[1].buf = (unsigned char *)data;
+
+        ret = i2c_transfer(ts_bak->client->adapter, msg, 2);
+        if (ret < 0) {
+            printk(KERN_INFO "i2c_transfer read error %d\n", ret);
+        }
+#endif
     }
     else
     {
         printk(KERN_INFO "read\n" );
+#ifdef _SMBUS_INTERFACE
         ret = i2c_smbus_read_block_data( ts_bak->client, cmd, data );
+#else
+ 		msg[0].addr = ts_bak->client->addr;
+        msg[0].flags = 0;//Write data
+        msg[0].len = 1;
+        msg[0].buf = (unsigned char *)(&cmd);
+
+        msg[1].addr = ts_bak->client->addr;
+        msg[1].flags = I2C_M_RD;
+        msg[1].len = 16;
+        msg[1].buf = (unsigned char *)data;
+
+        ret = i2c_transfer(ts_bak->client->adapter, msg, 2);
+        if (ret < 0) {
+            printk(KERN_INFO "i2c_transfer read error %d\n", ret);
+        }
+#endif
     }
 
     printk( KERN_INFO "%d\n", ret );
