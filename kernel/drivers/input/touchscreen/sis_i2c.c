@@ -459,16 +459,22 @@ static int sis_ts_probe(
 	}
 	//4. irp or timer setup
 	if (client->irq) {
-		ret = request_irq(client->irq, sis_ts_irq_handler, 0, client->name, ts);
+	    // Set Active Low. Please reference the file include/linux/interrupt.h
+		ret = request_irq(client->irq, sis_ts_irq_handler, IRQF_TRIGGER_LOW, client->name, ts);
 		if (ret == 0) {
-			ret = i2c_smbus_write_byte_data(ts->client, 0xf1, 0x01); /* enable abs int */
-			if (ret)
-				free_irq(client->irq, ts);
+		    // TO DO: Enable IRQ
+		    enable_irq(ts->client->irq);
 		}
 		if (ret == 0)
 			ts->use_irq = 1;
 		else
 			dev_err(&client->dev, "request_irq failed\n");
+	}
+
+	if (!ts->use_irq) {
+		hrtimer_init(&ts->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+		ts->timer.function = sis_ts_timer_func;
+		hrtimer_start(&ts->timer, ktime_set(1, 0), HRTIMER_MODE_REL);
 	}
 
 	if (!ts->use_irq) {

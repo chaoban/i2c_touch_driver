@@ -5,6 +5,10 @@
 *                                                           			            *
 *                                                           			            *
 *************************************************************
+[2010-11-21]
+Version: Android_v0.07.01_arm
+1. Interrupt mode in active low.
+
 [2010-11-20]
 Version: Android_v0.07.00_arm
 1. Based on Linux Kernel 2.6.32.
