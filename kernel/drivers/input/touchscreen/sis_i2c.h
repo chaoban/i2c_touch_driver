@@ -92,6 +92,10 @@ struct sis_i2c_rmi_platform_data {
 #define RES_FMT									   0x00
 #define FIX_FMT									   0x40
 
+//POWER MODE
+#define SIS_CMD_POWERMODE          0x90
+#define	MSK_
+
 #ifdef _SMBUS_INTERFACE
 #define CMD_BASE	0
 #else

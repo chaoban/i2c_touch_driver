@@ -9,7 +9,6 @@
 Files description:
 
 1. kernel
-   /arch/	Platform info for I2C BUS 2.
    /drivers/    SiS I2C Touchscreen drvier source code.
    /Makefile    The Makefile under kernel
    /config_sis  The config file for Beagleboard.
