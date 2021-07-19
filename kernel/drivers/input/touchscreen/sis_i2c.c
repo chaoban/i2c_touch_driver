@@ -26,7 +26,7 @@
 #include <linux/linkage.h>
 #include <linux/slab.h>
 
-#define FOR_X86       1
+#define NEW_I2C_STYLE
 
 struct Point {
 	int id;
@@ -82,7 +82,7 @@ static void sis_ts_early_suspend(struct early_suspend *h);
 static void sis_ts_late_resume(struct early_suspend *h);
 #endif
 
-#ifdef FOR_X86
+#ifdef NEW_I2C_STYLE
 //static const struct i2c_client_address_data addr_data;
 /* Insmod parameters */
 //enya I2C_CLIENT_INSMOD_1(synaptics);
@@ -282,12 +282,12 @@ static void sis_ts_work_func(struct work_struct *work)
 	ret = check_gpio_interrupt();
 	if (ret)
 	{
-	    hrtimer_start(&ts->timer, ktime_set(0, 12500000), HRTIMER_MODE_REL);
+	    hrtimer_start(&ts->timer, ktime_set(0, TIMER_NS), HRTIMER_MODE_REL);
 	}
-	else
+	
+	if (ts->use_irq)
 	{
-	    //Enable irq again.
-	    //enable_irq(ts->client->irq);   
+        enable_irq(ts->client->irq);
 	}
 
 err_free_allocate:
@@ -314,7 +314,7 @@ static enum hrtimer_restart sis_ts_timer_func(struct hrtimer *timer)
 	struct sis_ts_data *ts = container_of(timer, struct sis_ts_data, timer);
 
 	queue_work(sis_wq, &ts->work);
-	hrtimer_start(&ts->timer, ktime_set(0, 12500000), HRTIMER_MODE_REL);
+	hrtimer_start(&ts->timer, ktime_set(0, TIMER_NS), HRTIMER_MODE_REL);
 	return HRTIMER_NORESTART;
 }
 
@@ -322,7 +322,7 @@ static irqreturn_t sis_ts_irq_handler(int irq, void *dev_id)
 {
 	struct sis_ts_data *ts = dev_id;
 
-	//disable_irq(ts->client->irq);
+	disable_irq_nosync(ts->client->irq);
 	queue_work(sis_wq, &ts->work);
 	return IRQ_HANDLED;
 }
@@ -504,11 +504,6 @@ static int sis_ts_probe(
 		hrtimer_start(&ts->timer, ktime_set(1, 0), HRTIMER_MODE_REL);
 	}
 
-	if (!ts->use_irq) {
-		hrtimer_init(&ts->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-		ts->timer.function = sis_ts_timer_func;
-		hrtimer_start(&ts->timer, ktime_set(1, 0), HRTIMER_MODE_REL);
-	}
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	ts->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
 	ts->early_suspend.suspend = sis_ts_early_suspend;
@@ -623,7 +618,7 @@ static struct i2c_driver sis_ts_driver = {
 	.suspend	= sis_ts_suspend,
 	.resume		= sis_ts_resume,
 #endif
-#ifdef FOR_X86
+#ifdef NEW_I2C_STYLE
     .class      = I2C_CLASS_HWMON,
     .detect		= sis_ts_detect,
 //	.address_list	= &addr_data,
@@ -648,7 +643,7 @@ printk( KERN_INFO "sis_ts_init\n" );
 	return i2c_add_driver(&sis_ts_driver);
 }
 
-#ifdef FOR_X86
+#ifdef NEW_I2C_STYLE
 /* Return 0 if detection is successful, -ENODEV otherwise */
 static int sis_ts_detect(struct i2c_client *client, /*int kind,//enya*/
 		       struct i2c_board_info *info)

@@ -55,6 +55,8 @@ struct sis_i2c_rmi_platform_data {
 
 #define _I2C_INT_ENABLE		1
 
+#define TIMER_NS    12500000
+
 #ifdef _FOR_LEGACY_SIS81X
 #define MAX_FINGERS			2
 #else   // SiS9200
