@@ -53,7 +53,7 @@ struct sis_i2c_rmi_platform_data {
 //#define _SMBUS_INTERFACE
 //#define _FOR_LEGACY_SIS81X
 
-#define _I2C_INT_ENABLE		0
+#define _I2C_INT_ENABLE		1
 
 #ifdef _FOR_LEGACY_SIS81X
 #define MAX_FINGERS			2

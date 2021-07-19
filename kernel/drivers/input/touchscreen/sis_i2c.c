@@ -157,12 +157,25 @@ int sis_ReadPacket(struct i2c_client *client, uint8_t cmd, uint8_t* buf)
 #ifndef _SMBUS_INTERFACE
         ret = tmpbuf[0] & 0xff;
 #endif
+        if (ret > MAX_READ_BYTE_COUNT)
+        {
+            return -1;
+        }
         memcpy(&buf[offset], &tmpbuf[CMD_BASE], ret);
         offset += ret;
     }
     while (bReRead);
 
     return ret;
+}
+
+int check_gpio_interrupt()
+{
+    int ret = 0;
+    //TODO
+    //CHECK GPIO INTERRUPT STATUS BY YOUR PLATFORM SETTING.
+    
+    return ret;   
 }
 
 static void sis_ts_work_func(struct work_struct *work)
@@ -262,7 +275,20 @@ static void sis_ts_work_func(struct work_struct *work)
 		i++;
 	} 
 	while ((i < fingers) && (i < MAX_FINGERS));
+	
 	input_sync(ts->input_dev);
+	
+	//TODO: After interrupt status low, read i2c bus data by polling, until interrupt status is high
+	ret = check_gpio_interrupt();
+	if (ret)
+	{
+	    hrtimer_start(&ts->timer, ktime_set(0, 12500000), HRTIMER_MODE_REL);
+	}
+	else
+	{
+	    //Enable irq again.
+	    //enable_irq(ts->client->irq);   
+	}
 
 err_free_allocate:
     return;
@@ -296,7 +322,7 @@ static irqreturn_t sis_ts_irq_handler(int irq, void *dev_id)
 {
 	struct sis_ts_data *ts = dev_id;
 
-	disable_irq(ts->client->irq);
+	//disable_irq(ts->client->irq);
 	queue_work(sis_wq, &ts->work);
 	return IRQ_HANDLED;
 }
@@ -461,6 +487,7 @@ static int sis_ts_probe(
 	if (client->irq) {
 	    // Set Active Low. Please reference the file include/linux/interrupt.h
 		ret = request_irq(client->irq, sis_ts_irq_handler, IRQF_TRIGGER_LOW, client->name, ts);
+		//ret = 0; //Forced enable int
 		if (ret == 0) {
 		    // TO DO: Enable IRQ
 		    enable_irq(ts->client->irq);
