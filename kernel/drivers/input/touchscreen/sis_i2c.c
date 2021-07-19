@@ -756,21 +756,21 @@ asmlinkage long sys_sis_I2C_IO( unsigned char* data, int size )
 //ret = i2c_smbus_write_block_data( ts_bak->client, cmd, size-1, data+1 );
         msg[0].addr = ts_bak->client->addr;
         msg[0].flags = 0;
-        msg[0].len = 1;
+        msg[0].len = size;
         msg[0].buf = (unsigned char *)(&cmd);
 
-        msg[1].addr = ts_bak->client->addr;
-        msg[1].flags = 0;
-        msg[1].len = size-1;
-        msg[1].buf = (unsigned char *)(data+1);
+//        msg[1].addr = ts_bak->client->addr;
+//        msg[1].flags = 0;
+//        msg[1].len = size-1;
+//        msg[1].buf = (unsigned char *)(data+1);
 
-        ret = i2c_transfer(ts_bak->client->adapter, msg, 2);
+        ret = i2c_transfer(ts_bak->client->adapter, msg, 1);
         if (ret < 0) {
             printk(KERN_INFO "i2c_transfer write error %d\n", ret);
         }
 //Read
 //ret = i2c_smbus_read_block_data( ts_bak->client, 0x02, data );
-        cmd = 0x02;
+        cmd = 0x00;
         msg[0].addr = ts_bak->client->addr;
         msg[0].flags = 0;//Write data
         msg[0].len = 1;
