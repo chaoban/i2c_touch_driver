@@ -1,0 +1,12 @@
+*************************************************************
+*                                                           			            *
+*                                                           			            *
+*                         ReleaseNote                       			            *
+*                                                           			            *
+*                                                           			            *
+*************************************************************
+[2010-11-20]
+Version: Android_v0.07.00_arm
+1. Based on Linux Kernel 2.6.32.
+2. Android 2.1 Eclair for TI Beagleboard.
+3. SiS I2C Touch driver for sis9200.
